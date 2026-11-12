@@ -1,0 +1,64 @@
+{# Paginación reutilizable.
+   - Hasta 7 páginas: se ven todos los números ( ‹ Anterior  1 2 3  Siguiente › ) y NO aparece "Ir a".
+   - 8 o más: primera, última y las vecinas de la actual con "…" ( 1 … 4 [5] 6 … 48 ) y SÍ aparece "Ir a".
+   ruta = valores que van dentro de la URL (ej. tabla de /catalogo/<tabla>); kwargs = filtros (?estado=...) #}
+{% macro paginacion(endpoint, pagina, paginas, ruta={}) %}
+{% if paginas > 1 %}
+{% set args = dict(ruta, **kwargs) %}
+{% set todas = paginas <= 7 %}   {# cambie el 7 si quiere más o menos números sin "…" #}
+<nav class="paginacion" aria-label="Páginas">
+  {% if pagina > 1 %}
+    <a class="btn btn-sm btn-sec" href="{{ url_for(endpoint, pagina=pagina - 1, **args) }}">‹ Anterior</a>
+  {% else %}
+    <span class="btn btn-sm btn-sec deshabilitado">‹ Anterior</span>
+  {% endif %}
+  <span class="numeros">
+    {% for n in range(1, paginas + 1) %}
+      {% if todas or n == 1 or n == paginas or (n - pagina)|abs <= 1 %}
+        {% if n == pagina %}
+          <span class="btn btn-sm actual" aria-current="page">{{ n }}</span>
+        {% else %}
+          <a class="btn btn-sm btn-sec" href="{{ url_for(endpoint, pagina=n, **args) }}">{{ n }}</a>
+        {% endif %}
+      {% elif (n - pagina)|abs == 2 %}
+        <span class="puntos">…</span>
+      {% endif %}
+    {% endfor %}
+  </span>
+  {% if pagina < paginas %}
+    <a class="btn btn-sm btn-sec" href="{{ url_for(endpoint, pagina=pagina + 1, **args) }}">Siguiente ›</a>
+  {% else %}
+    <span class="btn btn-sm btn-sec deshabilitado">Siguiente ›</span>
+  {% endif %}
+
+  {# Campo para escribir el número de página: solo cuando hay "…" (no caben todos los números) #}
+  {% if not todas %}
+  <form class="ir-a-pagina" method="get" action="{{ url_for(endpoint, **ruta) }}">
+    {% for nombre, valor in kwargs.items() if valor is not none and valor != '' %}
+      <input type="hidden" name="{{ nombre }}" value="{{ valor }}">
+    {% endfor %}
+    <label>Ir a
+      <input type="number" name="pagina" min="1" max="{{ paginas }}" value="{{ pagina }}" required aria-label="Número de página">
+      de {{ paginas }}
+    </label>
+    <button class="btn btn-sm">Ir</button>
+  </form>
+  {% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{# Imagen pixel art de un registro + su nombre. tabla = jugadores, clanes, productos_tienda, rangos, mobs o modalidades #}
+{% macro icono(tabla, nombre, id=None, tam='md') %}
+<img class="pixel icono icono-{{ tam }}{{ ' icono-clan' if tabla == 'clanes' }}" src="{{ imagen_url(tabla, nombre, id) }}" alt="" loading="lazy">
+{%- endmacro %}
+
+{% macro con_icono(tabla, nombre, id=None, tam='md', negrita=False) %}
+<span class="con-icono">{{ icono(tabla, nombre, id, tam) }}{% if negrita %}<strong>{{ nombre }}</strong>{% else %}{{ nombre }}{% endif %}</span>
+{%- endmacro %}
+
+{# Insignia del rango; si es un rango nuevo sin imagen (signo de pregunta), muestra también el nombre #}
+{% macro insignia(nombre, id=None) %}
+{% set url = imagen_url('rangos', nombre, id) %}
+<span class="con-icono"><img class="pixel insignia" src="{{ url }}" alt="{{ nombre }}" title="{{ nombre }}" loading="lazy">{% if url.endswith('_default.png') %}{{ nombre }}{% endif %}</span>
+{%- endmacro %}

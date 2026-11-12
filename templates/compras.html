@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_macros.html" import paginacion, con_icono %}
+{% block titulo %}Compras{% endblock %}
+
+{% block contenido %}
+<div class="encabezado">
+  <h1>Compras en la tienda</h1>
+  <a class="btn" href="{{ url_for('compra_nueva') }}">+ Registrar compra</a>
+</div>
+
+<form class="buscador" method="get">
+  <select name="estado" aria-label="Filtrar por estado">
+    <option value="">Todas</option>
+    <option value="completada" {{ 'selected' if estado == 'completada' }}>Completadas</option>
+    <option value="reembolsada" {{ 'selected' if estado == 'reembolsada' }}>Reembolsadas</option>
+  </select>
+  <button class="btn">Filtrar</button>
+</form>
+
+<div id="resultados">
+<div class="tarjeta tabla-scroll">
+  <table class="tabla-tarjetas">
+    <thead>
+      <tr>
+        <th>#</th><th>Fecha</th><th>Jugador</th><th>Producto</th><th>Categoría</th>
+        <th class="num">Cant.</th><th>Pago</th><th>Estado</th><th class="num">Monto</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in filas %}
+      <tr>
+        <td data-label="Compra">{{ c.id_compra }}</td>
+        <td data-label="Fecha">{{ c.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td data-label="Jugador">{{ con_icono('jugadores', c.nickname, negrita=True) }}</td>
+        <td data-label="Producto">{{ con_icono('productos_tienda', c.producto, c.id_producto) }}</td>
+        <td data-label="Categoría">{{ c.categoria }}</td>
+        <td data-label="Cantidad" class="num">{{ c.cantidad }}</td>
+        <td data-label="Pago">{{ c.metodo_pago }}</td>
+        <td data-label="Estado"><span class="estado estado-{{ c.estado }}">{{ c.estado }}</span></td>
+        <td data-label="Monto" class="num">US$ {{ "%.2f"|format(c.monto_usd) }}</td>
+        <td class="acciones">
+          {% if c.estado == 'completada' %}
+          <form method="post" action="{{ url_for('compra_reembolsar', id_compra=c.id_compra) }}">
+            <button class="btn btn-sm btn-sec">Reembolsar</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('compra_eliminar', id_compra=c.id_compra) }}">
+            <button class="btn btn-sm btn-peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="nota">No hay compras.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if total %}<p class="nota">Mostrando {{ desde }}–{{ hasta }} de {{ total }} compras.</p>{% endif %}
+{{ paginacion('compras', pagina, paginas, estado=estado) }}
+</div>
+{% endblock %}

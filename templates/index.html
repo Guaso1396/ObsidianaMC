@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icono %}
+{% block titulo %}Inicio{% endblock %}
+
+{% macro miles(n) %}{{ "{:,}".format(n|int).replace(",", ".") }}{% endmacro %}
+{% macro pct(parte, total) %}{{ (parte * 100 / total)|round|int if total else 0 }}{% endmacro %}
+
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Panel del servidor</h1>
+    <p class="nota sin-margen">Resumen en vivo de ObsidianaMC · datos de Supabase</p>
+  </div>
+</div>
+
+{# 1. Indicadores grandes #}
+<section class="panel-kpis">
+  <article class="kpi-grande" style="--c: #5fbf3f">
+    <div class="kpi-icono">
+      <img class="pixel" src="{{ imagen_url('jugadores', top_nivel[0].nickname if top_nivel else '') }}" alt="">
+    </div>
+    <div>
+      <span>Jugadores</span>
+      <strong>{{ kpis.jugadores }}</strong>
+      <small><b>{{ kpis.activos }} activos</b> · {{ kpis.jugadores - kpis.activos }} inactivos</small>
+    </div>
+  </article>
+  <article class="kpi-grande" style="--c: #3fa9f5">
+    <div class="kpi-icono"><img class="pixel" src="{{ url_for('static', filename='img/marca/reloj.png') }}" alt=""></div>
+    <div>
+      <span>Horas jugadas</span>
+      <strong>{{ miles(kpis.horas) }}</strong>
+      <small><b>{{ kpis.sesiones }} sesiones</b> · {{ kpis.promedio_min|int }} min promedio</small>
+    </div>
+  </article>
+  <article class="kpi-grande" style="--c: #ffb020">
+    <div class="kpi-icono"><img class="pixel" src="{{ url_for('static', filename='img/marca/billete.png') }}" alt=""></div>
+    <div>
+      <span>Ingresos netos</span>
+      <strong>US$ {{ "%.2f"|format(kpis.ingresos) }}</strong>
+      <small><b>{{ kpis.compras_ok }} compras</b> · {{ kpis.reembolsadas }} reembolsadas</small>
+    </div>
+  </article>
+  <article class="kpi-grande" style="--c: #a874ff">
+    <div class="kpi-icono"><img class="pixel" src="{{ url_for('static', filename='img/productos/rango-leyenda.png') }}" alt=""></div>
+    <div>
+      <span>Rangos de pago</span>
+      <strong>{{ kpis.con_rango_pago }}</strong>
+      <small><b>{{ pct(kpis.con_rango_pago, kpis.jugadores) }}%</b> de los jugadores</small>
+    </div>
+  </article>
+</section>
+
+{# 2. Indicadores pequeños #}
+<section class="panel-mini">
+  <article class="kpi-mini">
+    <img class="pixel" src="{{ url_for('static', filename='img/productos/kit-de-constructor.png') }}" alt="">
+    <div><span>Bloques minados</span><strong>{{ miles(kpis.bloques) }}</strong></div>
+  </article>
+  <article class="kpi-mini">
+    <img class="pixel" src="{{ url_for('static', filename='img/mobs/esqueleto.png') }}" alt="">
+    <div><span>Mobs eliminados</span><strong>{{ miles(kpis.mobs) }}</strong></div>
+  </article>
+  <article class="kpi-mini">
+    <img class="pixel" src="{{ url_for('static', filename='img/clanes/_default.png') }}" alt="">
+    <div><span>Clanes</span><strong>{{ kpis.clanes }} <small>· {{ kpis.en_clan }} jugadores en clan</small></strong></div>
+  </article>
+  <article class="kpi-mini">
+    <div class="ancho">
+      <span>Edición</span>
+      <div class="ediciones"><span class="tag tag-java">Java {{ kpis.java }}</span> <span class="tag tag-bedrock">Bedrock {{ kpis.bedrock }}</span></div>
+      <div class="barra-doble">
+        <span style="width: {{ pct(kpis.java, kpis.java + kpis.bedrock) }}%; background: #ff8c3a"></span>
+        <span style="flex: 1; background: #3fa9f5"></span>
+      </div>
+    </div>
+  </article>
+</section>
+
+{# 3. Top 5, modalidades y países #}
+<section class="panel-listas">
+  <article class="tarjeta lista">
+    <h2>🏆 Top 5 por nivel <small>de {{ kpis.jugadores }} jugadores</small></h2>
+    {% for j in top_nivel %}
+      <div class="fila">
+        <span class="pos">#{{ loop.index }}</span>
+        <img class="pixel avatar" src="{{ imagen_url('jugadores', j.nickname) }}" alt="">
+        <strong class="crece">{{ j.nickname }}</strong>
+        <img class="pixel insignia" src="{{ imagen_url('rangos', j.rango) }}" alt="{{ j.rango }}" title="{{ j.rango }}">
+        <span class="valor verde">Nv. {{ j.nivel }}</span>
+      </div>
+    {% endfor %}
+  </article>
+
+  <article class="tarjeta lista">
+    <h2>🎮 Modalidades más jugadas <small>sesiones</small></h2>
+    {% set maximo = (modalidades|map(attribute='sesiones')|max) if modalidades else 1 %}
+    {% for m in modalidades %}
+      <div class="fila">
+        <span class="etiqueta-fila">{{ icono('modalidades', m.nombre, m.id_modalidad, 'sm') }}{{ m.nombre }}</span>
+        <div class="barra"><span style="width: {{ (m.sesiones * 100 / (maximo or 1))|round(1) }}%; background: #5fbf3f"></span></div>
+        <span class="valor">{{ m.sesiones }}</span>
+      </div>
+    {% endfor %}
+  </article>
+
+  <article class="tarjeta lista">
+    <h2>🌎 Jugadores por país <small>de {{ kpis.jugadores }}</small></h2>
+    {% set maximo = (paises|map(attribute='n')|max) if paises else 1 %}
+    {% for p in paises %}
+      <div class="fila">
+        <span class="etiqueta-fila">{{ p.pais }}</span>
+        <div class="barra"><span style="width: {{ (p.n * 100 / (maximo or 1))|round(1) }}%; background: #a874ff"></span></div>
+        <span class="valor">{{ p.n }}</span>
+      </div>
+    {% endfor %}
+  </article>
+</section>
+
+{# 4. Destacados #}
+<section class="panel-destacados">
+  {% if mob_top %}
+  <article class="destacado">
+    <img class="pixel" src="{{ imagen_url('mobs', mob_top.nombre, mob_top.id_mob) }}" alt="">
+    <div><span>Mob más eliminado</span><strong>{{ mob_top.nombre }}</strong><small>{{ miles(mob_top.n) }} eliminados</small></div>
+  </article>
+  {% endif %}
+  {% if mas_vendido %}
+  <article class="destacado">
+    <img class="pixel" src="{{ imagen_url('productos_tienda', mas_vendido.nombre, mas_vendido.id_producto) }}" alt="">
+    <div><span>Producto más vendido</span><strong>{{ mas_vendido.nombre }}</strong><small>{{ mas_vendido.n }} compras</small></div>
+  </article>
+  {% endif %}
+  {% if mas_factura %}
+  <article class="destacado">
+    <img class="pixel" src="{{ imagen_url('productos_tienda', mas_factura.nombre, mas_factura.id_producto) }}" alt="">
+    <div><span>Producto que más factura</span><strong>{{ mas_factura.nombre }}</strong><small>US$ {{ "%.2f"|format(mas_factura.total) }}</small></div>
+  </article>
+  {% endif %}
+</section>
+
+<section class="tarjeta">
+  <h2>Dashboard de analítica (Data Studio)</h2>
+  {% if looker_url %}
+    <div class="dashboard">
+      <iframe src="{{ looker_url }}"
+              title="Dashboard de ObsidianaMC en Data Studio"
+              allowfullscreen
+              sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
+      </iframe>
+    </div>
+    <p class="nota">Los datos vienen de Supabase. Si acaba de registrar algo, use
+      <em>⋮ → Actualizar datos</em> dentro del informe.</p>
+  {% else %}
+    <p class="nota">Falta configurar <code>LOOKER_EMBED_URL</code> en el archivo <code>.env</code>.</p>
+  {% endif %}
+</section>
+{% endblock %}

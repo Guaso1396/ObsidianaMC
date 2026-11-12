@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titulo %}Reporte #{{ log.id_log }}{% endblock %}
+
+{% block contenido %}
+<div class="encabezado">
+  <h1>Registro de auditoría #{{ log.id_log }}</h1>
+  <a class="btn btn-sec" href="{{ url_for('reportes') }}">← Volver</a>
+</div>
+
+<section class="kpis">
+  <article class="kpi"><span>Tabla</span><strong>{{ log.tabla }}</strong></article>
+  <article class="kpi"><span>Operación</span><strong><span class="op op-{{ log.operacion|lower }}">{{ log.operacion }}</span></strong></article>
+  <article class="kpi"><span>Fecha</span><strong>{{ log.fecha.strftime('%Y-%m-%d') }}</strong><small>{{ log.fecha.strftime('%H:%M:%S') }} · usuario {{ log.usuario_db }}</small></article>
+</section>
+
+<div class="tarjeta">
+  <h2>{{ 'Datos que tenía antes de eliminarse' if log.operacion == 'DELETE' else 'Datos guardados' }}</h2>
+  <table class="datos">
+    <tbody>
+      {% for campo, valor in log.datos.items() %}
+      <tr><th>{{ campo }}</th><td>{{ '—' if valor is none else valor }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if log.operacion == 'DELETE' %}
+<form method="post" action="{{ url_for('reporte_restaurar', id_log=log.id_log) }}">
+  <button class="btn">Restaurar este registro</button>
+</form>
+{% endif %}
+{% endblock %}

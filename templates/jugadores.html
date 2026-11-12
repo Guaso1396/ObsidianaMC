@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "_macros.html" import paginacion, con_icono, insignia %}
+{% block titulo %}Jugadores{% endblock %}
+
+{% block contenido %}
+<div class="encabezado">
+  <h1>Jugadores</h1>
+  <a class="btn" href="{{ url_for('jugador_nuevo') }}">+ Nuevo jugador</a>
+</div>
+
+<form class="tarjeta barra-filtros" method="get" id="filtros">
+  <input type="hidden" name="estado" value="{{ filtros.estado }}">
+
+  <div class="fila-busqueda">
+    <label class="caja-busqueda">
+      <span aria-hidden="true">🔍</span>
+      <input type="search" name="q" value="{{ filtros.q }}" placeholder="Buscar por nickname, ciudad o país…" autocomplete="off">
+    </label>
+    <div class="segmentos" id="contadores">
+      {% for valor, texto, n in [('', 'Todos', conteo.todos), ('activos', 'Activos', conteo.activos), ('inactivos', 'Inactivos', conteo.inactivos)] %}
+        <a href="{{ url_for('jugadores', **dict(filtros_url, estado=valor or None)) }}"
+           class="{{ 'activo' if filtros.estado == valor }}">{{ texto }}<i>{{ n }}</i></a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="fila-selectores">
+    <label class="selector">Rango
+      <select name="rango">
+        <option value="">Todos</option>
+        <option value="pago" {{ 'selected' if filtros.rango == 'pago' }}>De pago</option>
+        {% for r in opciones.rangos %}
+          <option value="{{ r.id_rango }}" {{ 'selected' if filtros.rango == r.id_rango|string }}>{{ r.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="selector">Edición
+      <select name="edicion">
+        <option value="">Todas</option>
+        {% for e in ['Java', 'Bedrock'] %}<option {{ 'selected' if filtros.edicion == e }}>{{ e }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="selector">País
+      <select name="pais">
+        <option value="">Todos</option>
+        {% for p in opciones.paises %}<option {{ 'selected' if filtros.pais == p }}>{{ p }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="selector">Clan
+      <select name="clan">
+        <option value="">Todos</option>
+        <option value="sin" {{ 'selected' if filtros.clan == 'sin' }}>Sin clan</option>
+        {% for c in opciones.clanes %}
+          <option value="{{ c.id_clan }}" {{ 'selected' if filtros.clan == c.id_clan|string }}>{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="selector">Ordenar
+      <select name="orden">
+        <option value="">Recomendado</option>
+        {% for clave, texto in opciones.orden.items() %}
+          <option value="{{ clave }}" {{ 'selected' if filtros.orden == clave }}>{{ texto }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <noscript><button class="btn btn-sm">Aplicar</button></noscript>
+  </div>
+
+  <div class="fila-etiquetas" id="etiquetas">
+    {% for campo, texto in etiquetas %}
+      <a class="chip" href="{{ url_for('jugadores', **dict(filtros_url, **{campo: None})) }}" title="Quitar filtro">{{ texto }} ✕</a>
+    {% endfor %}
+    <span class="conteo"><b>{{ total }}</b> {{ 'jugador' if total == 1 else 'jugadores' }}</span>
+  </div>
+</form>
+
+<div id="resultados">
+<div class="tarjeta tabla-scroll">
+  <table class="tabla-tarjetas tabla-c">
+    <thead>
+      <tr>
+        <th>Jugador</th>
+        <th>Rango</th>
+        <th>Clan</th>
+        <th>Edición</th>
+        <th>Nivel</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jugadores %}
+      <tr style="--c: {{ color_rango(j.rango) }}">
+        <td data-label="Jugador">
+          <span class="jugador">
+            <img class="pixel avatar-grande" src="{{ imagen_url('jugadores', j.nickname) }}" alt="">
+            <span><strong>{{ j.nickname }}</strong><small>{{ j.ciudad }}, {{ j.pais }}</small></span>
+          </span>
+        </td>
+        <td data-label="Rango">{{ insignia(j.rango) }}</td>
+        <td data-label="Clan">{% if j.clan %}{{ con_icono('clanes', j.clan, tam='sm') }}{% else %}<span class="nota">Sin clan</span>{% endif %}</td>
+        <td data-label="Edición"><span class="tag tag-{{ j.edicion|lower }}">{{ j.edicion }}</span></td>
+        <td data-label="Nivel">
+          <span class="nivel"><span class="barra"><span style="width: {{ j.nivel }}%; background: var(--c)"></span></span><b>{{ j.nivel }}</b></span>
+        </td>
+        <td data-label="Estado"><span class="estado estado-{{ 'activo' if j.activo else 'inactivo' }}">● {{ "Activo" if j.activo else "Inactivo" }}</span></td>
+        <td class="acciones">
+          <a class="btn btn-sm btn-sec" href="{{ url_for('jugador_editar', id_jugador=j.id_jugador) }}">Editar</a>
+          <form method="post" action="{{ url_for('jugador_eliminar', id_jugador=j.id_jugador) }}">
+            <button class="btn btn-sm btn-peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="nota">No se encontraron jugadores con esos filtros.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if total %}<p class="nota centrado">Mostrando {{ desde }}–{{ hasta }} de {{ total }} jugadores.</p>{% endif %}
+
+{{ paginacion('jugadores', pagina, paginas, **filtros_url) }}
+</div>
+
+<script>
+  // Los filtros se aplican solos al cambiar; la búsqueda, al escribir (sin recargar la página)
+  const form = document.querySelector('#filtros');
+  form.querySelectorAll('select').forEach(s => s.addEventListener('change', () => form.submit()));
+
+  let espera;
+  form.querySelector('input[name="q"]').addEventListener('input', () => {
+    clearTimeout(espera);
+    espera = setTimeout(async () => {                       // espera 250 ms a que termine de escribir
+      const datos = new FormData(form);
+      for (const [k, v] of [...datos]) if (!v) datos.delete(k);   // no manda filtros vacíos
+      const url = '{{ url_for("jugadores") }}?' + new URLSearchParams(datos);
+      const html = new DOMParser().parseFromString(await (await fetch(url)).text(), 'text/html');
+      for (const id of ['resultados', 'contadores', 'etiquetas'])  // cambia la tabla, los conteos y las etiquetas
+        document.getElementById(id).replaceWith(html.getElementById(id));
+      history.replaceState(null, '', url);
+    }, 250);
+  });
+</script>
+{% endblock %}

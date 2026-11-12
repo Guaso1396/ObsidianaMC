@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% set titulo = ('Editar ' if editando else ('Nueva ' if config.femenino else 'Nuevo ')) ~ config.singular %}
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<h1>{{ titulo|capitalize }}</h1>
+
+<form class="tarjeta formulario" method="post"{% if con_imagen %} enctype="multipart/form-data"{% endif %}>
+  {% for c in config.campos %}
+    {% set valor = r[c.nombre] if r[c.nombre] is not none else '' %}
+
+    {% if c.tipo == 'check' %}
+      <label class="check">
+        <input type="checkbox" name="{{ c.nombre }}" {{ 'checked' if (not editando and not r) or r[c.nombre] }}> {{ c.etiqueta }}
+      </label>
+
+    {% elif c.tipo == 'select' %}
+      <label>{{ c.etiqueta }}
+        <select name="{{ c.nombre }}" {{ 'required' if c.requerido }}>
+          {% for op in c.opciones %}<option {{ 'selected' if valor == op }}>{{ op }}</option>{% endfor %}
+        </select>
+      </label>
+
+    {% elif c.tipo == 'select_bd' %}
+      <label>{{ c.etiqueta }}
+        <select name="{{ c.nombre }}">
+          {% if not c.requerido %}<option value="">— Ninguno —</option>{% endif %}
+          {% for op in opciones[c.nombre] %}
+            <option value="{{ op.valor }}" {{ 'selected' if valor|string == op.valor|string }}>{{ op.texto }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+    {% elif c.tipo == 'textarea' %}
+      <label class="ancho-completo">{{ c.etiqueta }}
+        <textarea name="{{ c.nombre }}" rows="3">{{ valor }}</textarea>
+      </label>
+
+    {% else %}
+      <label>{{ c.etiqueta }}
+        <input name="{{ c.nombre }}" value="{{ valor }}"
+               {% if c.tipo == 'numero' %}type="number" step="1"{% elif c.tipo == 'decimal' %}type="number" step="0.01"{% endif %}
+               {% if c.minimo is not none %}min="{{ c.minimo }}"{% endif %}
+               {% if c.maximo %}maxlength="{{ c.maximo }}"{% endif %}
+               {{ 'required' if c.requerido }}>
+      </label>
+    {% endif %}
+  {% endfor %}
+
+  {% if con_imagen %}
+    <fieldset class="campo-imagen ancho-completo">
+      <legend>Imagen (opcional)</legend>
+      <img class="pixel vista-imagen" id="vista-imagen" alt=""
+           src="{{ imagen_url(tabla, r.nombre if r and r.nombre else '', id_registro) }}">
+      <div>
+        <input type="file" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" id="campo-imagen">
+        <p class="nota">PNG, JPG, GIF o WEBP de máximo 512 KB. Si no sube ninguna, se usa
+          la imagen del paquete o el signo de pregunta.</p>
+        {% if tiene_subida %}
+          <label class="check"><input type="checkbox" name="quitar_imagen"> Quitar la imagen subida</label>
+        {% endif %}
+      </div>
+    </fieldset>
+    <script>
+      // Muestra la imagen elegida antes de guardar
+      document.querySelector('#campo-imagen').addEventListener('change', (e) => {
+        const archivo = e.target.files[0];
+        if (archivo) document.querySelector('#vista-imagen').src = URL.createObjectURL(archivo);
+      });
+    </script>
+  {% endif %}
+
+  <div class="botones">
+    <button class="btn">Guardar</button>
+    <a class="btn btn-sec" href="{{ url_for('catalogo', tabla=tabla) }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

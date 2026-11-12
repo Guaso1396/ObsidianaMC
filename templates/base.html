@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Inicio{% endblock %} · ObsidianaMC</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/marca/favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/marca/logo-128.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="marca" href="{{ url_for('inicio') }}">
+      <img src="{{ url_for('static', filename='img/marca/logo-128.png') }}" alt="" width="36" height="36">
+      ObsidianaMC
+    </a>
+    <nav>
+      {% set menu = [
+          (url_for('inicio'), 'Inicio'),
+          (url_for('jugadores'), 'Jugadores'),
+          (url_for('sesiones'), 'Sesiones'),
+          (url_for('compras'), 'Compras'),
+          (url_for('catalogo', tabla='clanes'), 'Clanes'),
+          (url_for('catalogo', tabla='productos_tienda'), 'Tienda'),
+          (url_for('catalogo', tabla='modalidades'), 'Modalidades'),
+          (url_for('catalogo', tabla='rangos'), 'Rangos'),
+          (url_for('catalogo', tabla='mobs'), 'Mobs'),
+          (url_for('reportes'), 'Reportes')] %}
+      {% for enlace, texto in menu %}
+        {% set activo = (request.path == enlace) if enlace == '/' else request.path.startswith(enlace) %}
+        <a href="{{ enlace }}" class="{{ 'activo' if activo }}">{{ texto }}</a>
+      {% endfor %}
+    </nav>
+  </header>
+
+  <main class="contenedor">
+    {% for tipo, mensaje in get_flashed_messages(with_categories=true) %}
+      <div class="alerta alerta-{{ tipo }}">{{ mensaje }}</div>
+    {% endfor %}
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer class="pie">
+    Proyecto académico · Supabase + Data Studio · Universidad de Caldas<br>
+    <small>No afiliado a Mojang Studios ni a Microsoft.</small>
+  </footer>
+  <script>
+    // Cambio de página rápido: al pulsar ‹ Anterior, un número, Siguiente › o "Ir",
+    // se trae solo la tabla nueva (no se recarga toda la página).
+    async function cargarResultados(url) {
+      const actual = document.querySelector('#resultados');
+      actual.classList.add('cargando');
+      const respuesta = await fetch(url);
+      const nuevo = new DOMParser().parseFromString(await respuesta.text(), 'text/html').querySelector('#resultados');
+      actual.replaceWith(nuevo);
+      history.pushState(null, '', url);
+      if (nuevo.getBoundingClientRect().top < 0) nuevo.scrollIntoView({ behavior: 'smooth' });
+    }
+    document.addEventListener('click', (e) => {
+      const enlace = e.target.closest('#resultados .paginacion a');
+      if (enlace) { e.preventDefault(); cargarResultados(enlace.href); }
+    });
+    document.addEventListener('submit', (e) => {
+      const form = e.target.closest('#resultados .ir-a-pagina');
+      if (form) {
+        e.preventDefault();
+        cargarResultados(form.action + '?' + new URLSearchParams(new FormData(form)));
+      }
+    });
+    window.addEventListener('popstate', () => location.reload());   // botón "atrás" del navegador
+  </script>
+</body>
+</html>

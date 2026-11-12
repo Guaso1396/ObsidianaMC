@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Registrar sesión{% endblock %}
+
+{% block contenido %}
+<h1>Registrar sesión de juego</h1>
+
+<form class="tarjeta formulario" method="post">
+  <label>Jugador
+    <select name="id_jugador" required>
+      {% for j in jugadores %}
+        <option value="{{ j.id_jugador }}" {{ 'selected' if s.id_jugador == j.id_jugador|string }}>{{ j.nickname }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Modalidad
+    <select name="id_modalidad" required>
+      {% for m in modalidades %}
+        <option value="{{ m.id_modalidad }}" {{ 'selected' if s.id_modalidad == m.id_modalidad|string }}>{{ m.nombre }} ({{ m.tipo }})</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Duración (minutos)
+    <input type="number" name="duracion_min" min="1" required value="{{ s.duracion_min or 30 }}">
+  </label>
+  <label>Bloques minados
+    <input type="number" name="bloques_minados" min="0" value="{{ s.bloques_minados or 0 }}">
+  </label>
+  <label>Bloques colocados
+    <input type="number" name="bloques_colocados" min="0" value="{{ s.bloques_colocados or 0 }}">
+  </label>
+  <label>Muertes
+    <input type="number" name="muertes" min="0" value="{{ s.muertes or 0 }}">
+  </label>
+
+  <fieldset class="lineas">
+    <legend>Mobs eliminados (deje vacías las filas que no use) → tabla sesion_mobs</legend>
+    {% for i in range(4) %}
+      <div class="linea">
+        <select name="id_mob" aria-label="Mob {{ i + 1 }}">
+          <option value="">— Mob —</option>
+          {% for m in mobs %}
+            <option value="{{ m.id_mob }}">{{ m.nombre }} ({{ m.tipo }}, {{ m.experiencia }} XP)</option>
+          {% endfor %}
+        </select>
+        <input type="number" name="cantidad" min="1" placeholder="Cant." aria-label="Cantidad {{ i + 1 }}">
+      </div>
+    {% endfor %}
+  </fieldset>
+
+  <p class="nota ancho-completo">La experiencia se calcula sola: XP de los mobs + 1 XP por cada 20 bloques minados
+    + 3 XP por minuto en modalidades PvP. El nivel y el rango del jugador se actualizan automáticamente.</p>
+
+  <div class="botones">
+    <button class="btn">Guardar sesión</button>
+    <a class="btn btn-sec" href="{{ url_for('sesiones') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

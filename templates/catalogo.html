@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import paginacion, con_icono, insignia %}
+{% block titulo %}{{ config.titulo }}{% endblock %}
+
+{% block contenido %}
+<div class="encabezado">
+  <h1>{{ config.titulo }}</h1>
+  <a class="btn" href="{{ url_for('catalogo_form', tabla=tabla) }}">+ {{ 'Nueva' if config.femenino else 'Nuevo' }} {{ config.singular }}</a>
+</div>
+<p class="nota">{{ config.nota }}</p>
+
+<div id="resultados">
+<div class="tarjeta tabla-scroll">
+  <table class="tabla-tarjetas">
+    <thead>
+      <tr>
+        {% for columna, titulo in config.columnas %}<th>{{ titulo }}</th>{% endfor %}
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in filas %}
+      <tr>
+        {% for columna, titulo in config.columnas %}
+          <td data-label="{{ titulo }}">
+            {% if loop.first and tabla == 'rangos' %}{{ insignia(fila[columna], fila.id) }}
+            {% elif loop.first %}{{ con_icono(tabla, fila[columna], fila.id, tam='lg', negrita=True) }}
+            {% elif fila[columna] is none %}—
+            {% else %}{{ fila[columna] }}{% endif %}
+          </td>
+        {% endfor %}
+        <td class="acciones">
+          <a class="btn btn-sm btn-sec" href="{{ url_for('catalogo_form', tabla=tabla, id_registro=fila.id) }}">Editar</a>
+          <form method="post" action="{{ url_for('catalogo_eliminar', tabla=tabla, id_registro=fila.id) }}">
+            <button class="btn btn-sm btn-peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="{{ config.columnas|length + 1 }}" class="nota">No hay registros.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if total %}<p class="nota">Mostrando {{ desde }}–{{ hasta }} de {{ total }} registros.</p>{% endif %}
+{{ paginacion('catalogo', pagina, paginas, ruta={'tabla': tabla}) }}
+</div>
+{% endblock %}

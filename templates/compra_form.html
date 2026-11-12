@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block titulo %}Registrar compra{% endblock %}
+
+{% block contenido %}
+<h1>Registrar compra</h1>
+
+<form class="tarjeta formulario" method="post">
+  <label>Jugador
+    <select name="id_jugador" required>
+      {% for j in jugadores %}
+        <option value="{{ j.id_jugador }}" {{ 'selected' if c.id_jugador == j.id_jugador|string }}>{{ j.nickname }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Producto
+    <select name="id_producto" required>
+      {% for p in productos %}
+        <option value="{{ p.id_producto }}" {{ 'selected' if c.id_producto == p.id_producto|string }}>[{{ p.categoria }}] {{ p.nombre }} · US$ {{ "%.2f"|format(p.precio_usd) }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Cantidad
+    <input type="number" name="cantidad" min="1" value="{{ c.cantidad or 1 }}">
+  </label>
+
+  <label>Método de pago
+    <select name="metodo_pago">
+      {% for m in metodos %}<option {{ 'selected' if c.metodo_pago == m }}>{{ m }}</option>{% endfor %}
+    </select>
+  </label>
+
+  <p class="nota ancho-completo">El monto se calcula con el precio de la tienda. Si el producto es un rango,
+    el jugador sube de rango automáticamente (y lo pierde si la compra se reembolsa).</p>
+
+  <div class="botones">
+    <button class="btn">Guardar compra</button>
+    <a class="btn btn-sec" href="{{ url_for('compras') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

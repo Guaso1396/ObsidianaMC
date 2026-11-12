@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<h1>{{ titulo }}</h1>
+
+<form class="tarjeta formulario" method="post">
+  <label>Nickname (máximo 16 caracteres)
+    <input name="nickname" required maxlength="16" value="{{ j.nickname or '' }}">
+  </label>
+
+  <label>Email
+    <input type="email" name="email" required maxlength="120" value="{{ j.email or '' }}">
+  </label>
+
+  <label>Ciudad (define el país y la ubicación en el mapa)
+    <select name="ciudad">
+      {% for nombre, datos in ciudades.items() %}
+        <option value="{{ nombre }}" {{ 'selected' if j.ciudad == nombre }}>{{ nombre }} ({{ datos[0] }})</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Edición
+    <select name="edicion">
+      <option {{ 'selected' if j.edicion == 'Java' }}>Java</option>
+      <option {{ 'selected' if j.edicion == 'Bedrock' }}>Bedrock</option>
+    </select>
+  </label>
+
+  <label>Rango
+    <select name="id_rango">
+      {% for r in rangos %}
+        <option value="{{ r.id_rango }}" {{ 'selected' if j.id_rango|string == r.id_rango|string }}>{{ r.nombre }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Clan
+    <select name="id_clan">
+      <option value="">Sin clan</option>
+      {% for c in clanes %}
+        <option value="{{ c.id_clan }}" {{ 'selected' if j.id_clan|string == c.id_clan|string }}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="check">
+    <input type="checkbox" name="activo" {{ 'checked' if not j or j.activo }}> Jugador activo
+  </label>
+
+  <div class="botones">
+    <button class="btn">Guardar</button>
+    <a class="btn btn-sec" href="{{ url_for('jugadores') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

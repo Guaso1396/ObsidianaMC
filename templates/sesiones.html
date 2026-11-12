@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import paginacion, con_icono %}
+{% block titulo %}Sesiones{% endblock %}
+
+{% block contenido %}
+<div class="encabezado">
+  <h1>Sesiones de juego</h1>
+  <a class="btn" href="{{ url_for('sesion_nueva') }}">+ Registrar sesión</a>
+</div>
+
+<form class="buscador" method="get">
+  <select name="modalidad" aria-label="Filtrar por modalidad">
+    <option value="">Todas las modalidades</option>
+    {% for m in modalidades %}
+      <option value="{{ m.id_modalidad }}" {{ 'selected' if modalidad == m.id_modalidad }}>{{ m.nombre }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn">Filtrar</button>
+</form>
+
+<div id="resultados">
+<div class="tarjeta tabla-scroll">
+  <table class="tabla-tarjetas">
+    <thead>
+      <tr>
+        <th>#</th><th>Fecha</th><th>Jugador</th><th>Modalidad</th>
+        <th class="num">Minutos</th><th class="num">Bloques</th><th class="num">Mobs</th>
+        <th class="num">Muertes</th><th class="num">XP</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in filas %}
+      <tr>
+        <td data-label="Sesión">{{ s.id_sesion }}</td>
+        <td data-label="Fecha">{{ s.inicio.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td data-label="Jugador">{{ con_icono('jugadores', s.nickname, negrita=True) }}</td>
+        <td data-label="Modalidad">{{ con_icono('modalidades', s.modalidad, s.id_modalidad, tam='sm') }} <span class="etiqueta etiqueta-{{ s.tipo }}">{{ s.tipo }}</span></td>
+        <td data-label="Minutos" class="num">{{ s.duracion_min }}</td>
+        <td data-label="Bloques" class="num">{{ s.bloques_minados }}</td>
+        <td data-label="Mobs" class="num">{{ s.mobs }}</td>
+        <td data-label="Muertes" class="num">{{ s.muertes }}</td>
+        <td data-label="XP" class="num">{{ s.experiencia }}</td>
+        <td class="acciones">
+          <a class="btn btn-sm btn-sec" href="{{ url_for('sesion_detalle', id_sesion=s.id_sesion) }}">Ver</a>
+          <form method="post" action="{{ url_for('sesion_eliminar', id_sesion=s.id_sesion) }}">
+            <button class="btn btn-sm btn-peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="nota">No hay sesiones.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if total %}<p class="nota">Mostrando {{ desde }}–{{ hasta }} de {{ total }} sesiones.</p>{% endif %}
+{{ paginacion('sesiones', pagina, paginas, modalidad=modalidad) }}
+</div>
+{% endblock %}
